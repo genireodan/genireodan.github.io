@@ -56,8 +56,7 @@
     steps: 'Pas encore l’app ? Installez-la, puis revenez sur cette page et touchez Ouvrir dans BusAndSleep.',
     missing: 'Ce lien est incomplet. Demandez à votre ami de partager l’arrêt à nouveau.',
     privacy: 'L’arrêt est dans le lien lui-même, après le #. Les navigateurs n’envoient jamais cette partie à ce site : il n’est enregistré nulle part.',
-    radius: function (m) { return m >= 1000 ? 'Réveil à ' + (m / 1000).toLocaleString('fr') + ' km' : 'Réveil à ' + m + ' m'; },
-    lead: function (min) { return min + ' min avant'; }
+    before: ' avant'
   } : {
     lang: 'en',
     title: 'A stop shared with you',
@@ -67,8 +66,7 @@
     steps: 'Don’t have the app yet? Install it, then come back to this page and tap Open in BusAndSleep.',
     missing: 'This link is incomplete. Ask your friend to share the stop again.',
     privacy: 'The stop is in the link itself, after the #. Browsers never send that part to this website, so it is not stored anywhere.',
-    radius: function (m) { return m >= 1000 ? 'Wakes you ' + (m / 1000) + ' km before' : 'Wakes you ' + m + ' m before'; },
-    lead: function (min) { return min + ' min before'; }
+    before: ' before'
   };
   function set(id, value) { document.getElementById(id).textContent = value; }
   document.documentElement.lang = text.lang;
@@ -89,12 +87,17 @@
   var name = '';
   try { name = decodeURIComponent(parts[0]); } catch (e) {}
   set('name', name.trim() || '—');
+  // Same wording as the app's list: "500 m · 5 min before".
   var details = [];
   var radius = Number(parts[3]);
-  if (parts[3] && isFinite(radius) && radius > 0) details.push(text.radius(Math.round(radius)));
+  if (parts[3] && isFinite(radius) && radius > 0) {
+    details.push(radius >= 1000
+      ? (radius / 1000).toLocaleString(text.lang, { maximumFractionDigits: 1 }) + ' km'
+      : Math.round(radius) + ' m');
+  }
   var lead = Number(parts[4]);
-  if (parts[4] && isFinite(lead) && lead > 0) details.push(text.lead(Math.round(lead / 60)));
-  set('details', details.join(' · '));
+  if (parts[4] && isFinite(lead) && lead > 0) details.push(Math.round(lead / 60) + ' min');
+  set('details', details.length ? details.join(' · ') + text.before : '');
 
   // An intent:// link cannot carry a fragment: the data goes in ?d= for the app's own scheme.
   var play = 'https://play.google.com/store/apps/details?id=com.busandsleep.app';
