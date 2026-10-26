@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>A stop shared with you · BusAndSleep</title>
+  <link rel="icon" href="/busandsleep-site/icon.png">
+  <link rel="stylesheet" href="/busandsleep-site/style.css">
+  <style>
+    .place { border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; margin: 24px 0; }
+    .place h2 { margin: 0 0 4px; font-size: 1.4rem; overflow-wrap: anywhere; }
+    .button { display: block; text-align: center; padding: 14px 16px; border-radius: 999px;
+      font-weight: 600; text-decoration: none; margin: 12px 0; border: 1px solid var(--line); }
+    .button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    ol { padding-left: 1.2rem; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="/busandsleep-site/icon.png" width="56" height="56" alt="">
+    <div>
+      <h1 id="title">A stop shared with you</h1>
+      <p class="meta">BusAndSleep · <span id="tagline">wakes you before your stop</span></p>
+    </div>
+  </header>
+
+  <div id="found" hidden>
+    <div class="place">
+      <h2 id="name"></h2>
+      <p class="meta" id="details"></p>
+    </div>
+    <a class="button primary" id="open" href="#">Open in BusAndSleep</a>
+    <a class="button" id="play" href="https://play.google.com/store/apps/details?id=com.busandsleep.app">Get BusAndSleep on Google Play</a>
+    <p class="meta" id="steps">Don't have the app yet? Install it, then come back to this page and tap Open in BusAndSleep.</p>
+  </div>
+
+  <div id="missing" hidden>
+    <p id="missingText">This link is incomplete. Ask your friend to share the stop again.</p>
+    <a class="button" href="https://play.google.com/store/apps/details?id=com.busandsleep.app" id="play2">Get BusAndSleep on Google Play</a>
+  </div>
+
+  <p class="meta" id="privacy">The stop is in the link itself, after the #. Browsers never send that part to this website, so it is not stored anywhere.</p>
+</main>
+<script>
+(function () {
+  var fr = /^fr\b/i.test(navigator.language || '');
+  var text = fr ? {
+    lang: 'fr',
+    title: 'Un arrêt partagé avec vous',
+    tagline: 'vous réveille avant votre arrêt',
+    open: 'Ouvrir dans BusAndSleep',
+    play: 'Télécharger BusAndSleep sur Google Play',
+    steps: 'Pas encore l’app ? Installez-la, puis revenez sur cette page et touchez Ouvrir dans BusAndSleep.',
+    missing: 'Ce lien est incomplet. Demandez à votre ami de partager l’arrêt à nouveau.',
+    privacy: 'L’arrêt est dans le lien lui-même, après le #. Les navigateurs n’envoient jamais cette partie à ce site : il n’est enregistré nulle part.',
+    radius: function (m) { return m >= 1000 ? 'Réveil à ' + (m / 1000).toLocaleString('fr') + ' km' : 'Réveil à ' + m + ' m'; },
+    lead: function (min) { return min + ' min avant'; }
+  } : {
+    lang: 'en',
+    title: 'A stop shared with you',
+    tagline: 'wakes you before your stop',
+    open: 'Open in BusAndSleep',
+    play: 'Get BusAndSleep on Google Play',
+    steps: 'Don’t have the app yet? Install it, then come back to this page and tap Open in BusAndSleep.',
+    missing: 'This link is incomplete. Ask your friend to share the stop again.',
+    privacy: 'The stop is in the link itself, after the #. Browsers never send that part to this website, so it is not stored anywhere.',
+    radius: function (m) { return m >= 1000 ? 'Wakes you ' + (m / 1000) + ' km before' : 'Wakes you ' + m + ' m before'; },
+    lead: function (min) { return min + ' min before'; }
+  };
+  function set(id, value) { document.getElementById(id).textContent = value; }
+  document.documentElement.lang = text.lang;
+  document.title = text.title + ' · BusAndSleep';
+  set('title', text.title); set('tagline', text.tagline); set('open', text.open);
+  set('play', text.play); set('play2', text.play); set('steps', text.steps);
+  set('missingText', text.missing); set('privacy', text.privacy);
+
+  // Same format as the app: <name>;<lat>;<lng>;<radius>;<lead>
+  var data = location.hash.slice(1);
+  var parts = data.split(';');
+  if (parts.length < 3) { try { parts = decodeURIComponent(data).split(';'); } catch (e) {} }
+  var lat = Number(parts[1]), lng = Number(parts[2]);
+  var valid = parts.length >= 3 && parts[1] !== '' && parts[2] !== '' &&
+    isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  if (!valid) { document.getElementById('missing').hidden = false; return; }
+
+  var name = '';
+  try { name = decodeURIComponent(parts[0]); } catch (e) {}
+  set('name', name.trim() || '—');
+  var details = [];
+  var radius = Number(parts[3]);
+  if (parts[3] && isFinite(radius) && radius > 0) details.push(text.radius(Math.round(radius)));
+  var lead = Number(parts[4]);
+  if (parts[4] && isFinite(lead) && lead > 0) details.push(text.lead(Math.round(lead / 60)));
+  set('details', details.join(' · '));
+
+  // An intent:// link cannot carry a fragment: the data goes in ?d= for the app's own scheme.
+  var play = 'https://play.google.com/store/apps/details?id=com.busandsleep.app';
+  document.getElementById('open').href = 'intent://add?d=' + encodeURIComponent(data) +
+    '#Intent;scheme=busandsleep;package=com.busandsleep.app;S.browser_fallback_url=' +
+    encodeURIComponent(play) + ';end';
+  document.getElementById('found').hidden = false;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.busandsleep.app",
+      "sha256_cert_fingerprints": [
+        "49:64:63:4B:D6:35:91:1E:28:4A:30:61:BB:5D:27:79:CD:5F:63:6D:BC:CB:E5:1D:3D:CF:D3:4E:50:1C:48:D3"
+      ]
+    }
+  }
+]
